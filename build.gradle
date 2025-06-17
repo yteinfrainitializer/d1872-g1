@@ -47,7 +47,7 @@ dependencies {
 	implementation 'org.postgresql:postgresql:42.6.0'
 	liquibaseRuntime 'org.postgresql:postgresql:42.6.0'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-	checkstyleRules 'tr.gov.tubitak.bilgem.yte.infra:yte-code-quality:2.3.0-RC2'
+	checkstyleRules 'tr.gov.tubitak.bilgem.yte.infra:yte-code-quality:2.2.0-RELEASE'
 	implementation 'tr.gov.tubitak.bilgem.yte.infra:yte-data-jpa'
 	implementation 'tr.gov.tubitak.bilgem.yte.infra:yte-rest'
 	annotationProcessor 'org.projectlombok:lombok'
