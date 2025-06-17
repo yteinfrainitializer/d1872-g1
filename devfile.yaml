@@ -1,0 +1,97 @@
+schemaVersion: 2.1.0
+metadata:
+  name: java-springboot
+  displayName: Spring Boot®
+  description: Java application using Spring Boot® and OpenJDK 17
+  icon: https://raw.githubusercontent.com/devfile-samples/devfile-stack-icons/main/spring.svg
+  tags:
+    - Java
+    - Spring
+  projectType: springboot
+  language: Java
+  version: 1.2.0
+components:
+  - name: app
+    container:
+      image: maven:3-eclipse-temurin-17
+      command: ["tail", "-f", "/dev/null"]
+      memoryLimit: 512Mi
+      mountSources: true
+      endpoints:
+        - name: http-springboot
+          targetPort: 8080
+        - exposure: none
+          name: debug
+          targetPort: 5858
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+      env:
+        - name: DEBUG_PORT
+          value: '5858'
+  - name: postgres
+    container:
+      image: postgres:17-alpine
+      endpoints:
+        - name: postgres-ep
+          targetPort: 5432
+      volumeMounts:
+        - name: postgres-vol
+      env:
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        - name: POSTGRES_DB
+          value: yte-demo-app
+        - name: PGDATA
+          value: /tmp/pgdata
+  - name: redis
+    container:
+      image: redis
+      endpoints:
+        - name: redis-ep
+          targetPort: 6379
+          exposure: internal
+  - name: postgres-vol
+    volume: {}
+  - name: m2
+    volume: {}
+commands:
+  - id: dball
+    exec:
+      component: app
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: 'gradle dropAll update -Dliquibase.contexts=sql,faker'
+      group:
+        kind: build
+        isDefault: true
+  - id: package
+    exec:
+      component: app
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: 'gradle bootJar'
+      group:
+        kind: build
+        isDefault: true
+  - id: run-java-jar
+    exec:
+      component: app
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: 'java -jar target/*.jar'
+      group:
+        kind: run
+        isDefault: true
+  - id: run-spring-boot
+    exec:
+      component: app
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: 'gradle bootRun'
+      group:
+        kind: run
+  - id: debug
+    exec:
+      component: app
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: 'java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${DEBUG_PORT},suspend=n -jar target/*.jar'
+      group:
+        kind: debug
+        isDefault: true

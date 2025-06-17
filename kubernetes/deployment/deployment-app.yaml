@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  namespace: demo
+  labels:
+    name: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      volumes:
+        - name: filebeat-dir
+          hostPath:
+            path: /var/log/yte
+            type: DirectoryOrCreate
+      containers:
+        - name: demo
+          image: containerRegistryAddress/directoryName/demo:v1.0.0
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: JAVA_OPTS
+              value: >-
+                -Xms512m
+                -Xmx1g
+                -Dlogback.dirPath=/var/log/yte/
+                -Dspring.profiles.active=demo
+                -Dpinpoint.applicationName=demo
+                -Dpinpoint.agentName=demo
+                -Dpinpoint.container=demo
+            - name: TZ
+              value: Europe/Istanbul
+            - name: DEFAULT_MANAGED_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  name: default-configs
+                  key: default-managed-opts
+          volumeMounts:
+            - name: filebeat-dir
+              mountPath: /var/log/yte
+              subPathExpr: ${NAME}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 1
+            requests:
+              memory: 1Gi
+              cpu: 250m
+      securityContext:
+        runAsUser: 5005
+        runAsGroup: 5005
+        fsGroup: 5005
+      initContainers:
+        - name: prep-symlink
+          image: busybox
+          imagePullPolicy: Never
+          env:
+            - name: NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          securityContext:
+            allowPrivilegeEscalation: true
+          command: ["bin/sh", "-ec", "mkdir /var/log/yte/$(NAME); chown -R 5005:5005 /var/log/yte/$(NAME)"]
+          volumeMounts:
+            - name: filebeat-dir
+              mountPath: /var/log/yte
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: demo

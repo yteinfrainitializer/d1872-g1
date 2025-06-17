@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    options {
+
+    }
+    stages {
+        stage('Checkout code') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build') {
+            tools {
+                jdk 17
+                gradle "LOCALGRADLE"
+            }
+            steps {
+                echo 'Building..'
+                sh 'gradle clean'
+                sh 'gradle dropAll update'
+                sh 'gradle test'
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

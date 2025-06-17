@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="DemoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+        <module name="yte-demo-app.main" />
+        <option name="SPRING_BOOT_MAIN_CLASS" value="tr.gov.tubitak.bilgem.yte.yte_demo_app.DemoApplication" />
+        <method v="2">
+            <option name="Make" enabled="true" />
+        </method>
+    </configuration>
+</component>

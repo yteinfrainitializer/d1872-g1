@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout code') {
+            steps {
+                checkout scm
+                sh "git checkout ${params.BRANCH_NAME}"
+            }
+        }
+        stage('Prepare for sonar') {
+            tools {
+                jdk 17
+                gradle "LOCALGRADLE"
+            }
+            steps {
+                sh 'gradle test jacocoTestReport'
+            }
+        }
+        stage('Sonar') {
+            tools {
+                jdk 17
+                maven "LOCALMAVEN"
+            }
+            steps {
+                sh "gradle sonar -Dsonar.projectKey=tr.gov.tubitak.bilgem.yte:yte-demo-app -Dsonar.projectVersion=${params.VERSION} -Dsonar.projectName=DemoApplication"
+            }
+        }
+    }
+    post {
+        always {
+            emailext attachLog: true, body: '$BUILD_STATUS: $PROJECT_NAME - Build # $BUILD_NUMBER ${SCRIPT, template="groovy-html.template"}', mimeType: 'text/html', recipientProviders: [buildUser(), requestor()], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - Result'
+            cleanWs()
+        }
+    }
+}

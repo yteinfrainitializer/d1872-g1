@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- Some rules are disabled because there could be some incompatible code for these rules.
+         These suppressions can be removed by changing the code according to them or overriding
+         the rules in a new "checkstyle.xml" file. If a new ruleset file is generated and used,
+         there may be a need to add the already used sun and spring rules to this new ruleset file.
+    -->
+
+    <!-- general suppression -->
+    <suppress files="[/\\]target/generated.*[/\\]" checks=".*"/>
+    <!-- yte_and_spring_checks -->
+    <suppress files="." checks="RegexpHeader"/>
+    <suppress files="." checks="SpringHeaderCheck"/>
+    <suppress files="." checks="Javadoc*"/>
+    <suppress files="." checks="SpringLeadingWhitespace"/>
+    <suppress files="." checks="SpringLambda"/>
+    <suppress files="." checks="SpringHideUtilityClassConstructor"/>
+    <suppress files="." checks="RequireThis"/>
+    <suppress files="." checks="RightCurly"/>
+    <suppress files="." checks="SpringImportOrder"/>
+
+</suppressions>

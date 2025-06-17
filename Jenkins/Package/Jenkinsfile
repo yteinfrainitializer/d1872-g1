@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+    environment {
+
+    }
+    stages {
+
+        stage('Checkout code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Package') {
+            tools {
+                jdk 17
+                gradle "LOCALGRADLE"
+            }
+            steps {
+                echo 'Packaging..'
+                sh 'gradle clean bootJar'
+            }
+        }
+
+        stage('Liquibase') {
+            tools {
+                jdk 17
+                maven "LOCALMAVEN"
+            }
+            steps {
+                echo 'Creating SQL..'
+                sh 'gradle updateSql -Pprofile=demo'
+                sh 'gradle updateSql -Pprofile=prod'
+            }
+        }
+
+        stage('Build') {
+            tools {
+                jdk 17
+                maven "LOCALMAVEN"
+            }
+            steps {
+                echo 'Building..'
+                sh'''
+                cp -r /directoryWherePinpointIsLocated/pinpoint-agent pinpoint-agent
+                docker build -t containerRegistryAddress/directoryName:version .
+                docker login -u username -p password containerRegistryAddress
+                docker push containerRegistryAddress/directoryName:version
+                '''
+            }
+        }
+
+        stage('Trivy Image Vulnerability Scan') {
+            steps {
+                sh 'wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl'
+                sh 'trivy image --no-progress --format template --template "@./html.tpl" -o project-scan-server.html containerRegistryAddress/directoryName:version'
+                publishHTML target : [
+                  allowMissing: true,
+                  alwaysLinkToLastBuild: true,
+                  keepAll: true,
+                  reportDir: '.',
+                  reportFiles: 'project-scan-server.html',
+                  reportName: 'Trivy Scan Server',
+                  reportTitles: 'Trivy Scan Server'
+                 ]
+                sh 'trivy image --no-progress --exit-code 1 --severity CRITICAL containerRegistryAddress/directoryName:version'
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            script {
+                build job: 'SONAR-DemoApplication', parameters: [
+                    string(name: 'BRANCH_NAME', value:  "$GIT_BRANCH"),
+                    string(name: 'VERSION', value: "0.0.$BUILD_NUMBER")
+                ], wait: false
+            }
+            archiveArtifacts artifacts: 'target/*.sql', onlyIfSuccessful: true
+        }
+        failure {
+
+        }
+    }
+}

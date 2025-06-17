@@ -1,0 +1,133 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.18'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	id 'maven-publish'
+	id 'org.liquibase.gradle' version '2.2.0'
+	id 'jacoco'
+	id 'org.sonarqube' version '4.4.1.3373'
+	id 'checkstyle'
+}
+
+group = 'tr.gov.tubitak.bilgem.yte'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	checkstyleRules
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	maven { url 'https://nexus.bilgem.gov.tr/nexus/content/groups/public/' }
+	mavenCentral()
+}
+
+ext {
+	set('profile', project.hasProperty('profile') ? profile : 'default')
+	set('orgMapstructVersion', "1.4.1.Final")
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	liquibaseRuntime 'info.picocli:picocli:4.7.5'
+	checkstyle 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.41'
+	annotationProcessor 'org.hibernate:hibernate-jpamodelgen'
+	liquibaseRuntime 'org.liquibase:liquibase-core:4.21.0'
+	liquibaseRuntime 'org.liquibase:liquibase-groovy-dsl:2.1.2'
+	implementation "org.mapstruct:mapstruct:${orgMapstructVersion}"
+	annotationProcessor "org.mapstruct:mapstruct-processor:${orgMapstructVersion}"
+	implementation 'org.postgresql:postgresql:42.6.0'
+	liquibaseRuntime 'org.postgresql:postgresql:42.6.0'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+	checkstyleRules 'tr.gov.tubitak.bilgem.yte.infra:yte-code-quality:2.3.0-RC2'
+	implementation 'tr.gov.tubitak.bilgem.yte.infra:yte-data-jpa'
+	implementation 'tr.gov.tubitak.bilgem.yte.infra:yte-rest'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom 'tr.gov.tubitak.bilgem.yte.infra:yte-infra-libraries:2.3.0-RC2'
+	}
+}
+
+tasks.named('bootJar') {
+	layered {
+		layerOrder = ['dependencies', 'spring-boot-loader', 'snapshot-dependencies', 'company-dependencies', 'application']
+		application {
+			intoLayer "application"
+			intoLayer("spring-boot-loader") {
+				include "org/springframework/boot/loader/" + "**"
+			}
+		}
+		dependencies {
+			intoLayer "application"
+			intoLayer("snapshot-dependencies") {
+				include "*:*:*SNAPSHOT"
+			}
+			intoLayer("company-dependencies") {
+				include "tr.gov.tubitak.bilgem.yte.infra:*"
+			}
+		}
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+liquibase {
+	activities {
+		'main' {
+			searchPath "src/main/resources/"
+			defaultsFile "src/main/resources/config/liquibase/environments/${profile}/db.properties"
+			outputFile "build/demo-${profile}.sql"
+			if (project.hasProperty('contexts')) {
+				contexts contexts
+			}
+		}
+	}
+}
+
+sonarqube {
+	properties {
+		property("sonar.host.url", "sonar_host")
+		property("sonar.token", "sonar_token")
+	}
+}
+
+tasks.jacocoTestReport {
+	reports {
+		xml.required = true
+	}
+}
+
+tasks.register('copyResources', Copy) {
+	def archive = configurations.checkstyleRules.resolve().find {
+		it.name.startsWith('yte-code-quality')
+	}
+	from zipTree(archive).matching { include '*.*' }
+	into layout.buildDirectory.dir('config/checkstyle')
+
+	from file('src/main/resources/checkstyle-suppressions.xml')
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	into layout.buildDirectory.dir('config/checkstyle')
+}
+
+compileJava.dependsOn copyResources
+
+checkstyle {
+	configDirectory = layout.buildDirectory.dir('config/checkstyle')
+	ignoreFailures true
+}
+

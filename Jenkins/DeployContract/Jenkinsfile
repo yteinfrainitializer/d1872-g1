@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    options {
+
+    }
+    stages {
+        stage('Checkout code') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build') {
+            tools {
+                jdk 17
+                gradle "LOCALGRADLE"
+            }
+            steps {
+                sh 'gradle clean verifierStubsJar publish'
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

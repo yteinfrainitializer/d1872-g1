@@ -1,0 +1,42 @@
+appname: "demo"
+spring:
+  profiles:
+    active: "default"
+  application:
+    name: "demo"
+  main:
+    allow-bean-definition-overriding: true
+  liquibase:
+    contexts: "sql,faker"
+    enabled: true
+    change-log: "classpath:/config/liquibase/master.xml"
+    drop-first: false
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/yte-demo-app"
+    username: "postgres"
+    password: "postgres"
+    driverClassName: "org.postgresql.Driver"
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 5
+  ro:
+    datasource:
+      url: "jdbc:postgresql://localhost:5432/yte-demo-app"
+      username: "postgres"
+      password: "postgres"
+  redis:
+    port: 6379
+  jpa:
+    open-in-view: false
+enable:
+  hikari: true
+  ro.transaction:
+    routing: true
+jwt:
+  signKey:
+    cas: "32-character-production-sign-key"
+    dev: "32-character-development-signkey"
+oauth2:
+  clients:
+    swagger.secret: "secretkey"
+    rest.secret: "secretkey"

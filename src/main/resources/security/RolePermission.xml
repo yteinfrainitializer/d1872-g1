@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<roles>
+    <role name="test" description = "test">
+        <permissions>
+            <permission name="ROLE_TEST" description="test role description"/>
+        </permissions>
+    </role>
+</roles>
+
