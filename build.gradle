@@ -57,7 +57,7 @@ dependencies {
 
 dependencyManagement {
 	imports {
-		mavenBom 'tr.gov.tubitak.bilgem.yte.infra:yte-infra-libraries:2.3.0-RC2'
+		mavenBom 'tr.gov.tubitak.bilgem.yte.infra:yte-infra-libraries:2.2.0-RELEASE'
 	}
 }
 
