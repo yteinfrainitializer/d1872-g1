@@ -31,6 +31,7 @@ repositories {
 }
 
 ext {
+	set('liquibaseUrl', project.hasProperty('liquibaseUrl') ? liquibaseUrl : 'jdbc:postgresql://localhost:5432/yte-demo-app')
 	set('profile', project.hasProperty('profile') ? profile : 'default')
 	set('orgMapstructVersion', "1.4.1.Final")
 }
@@ -89,6 +90,7 @@ tasks.named('test') {
 liquibase {
 	activities {
 		'main' {
+			url "${liquibaseUrl}"
 			searchPath "src/main/resources/"
 			defaultsFile "src/main/resources/config/liquibase/environments/${profile}/db.properties"
 			outputFile "build/demo-${profile}.sql"
