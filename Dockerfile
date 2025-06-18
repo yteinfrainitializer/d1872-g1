@@ -1,11 +1,9 @@
-FROM eclipse-temurin:17-jre-alpine AS builder
+FROM eclipse-temurin:17-jre AS builder
 COPY build/libs/yte-demo-app-0.0.1-SNAPSHOT.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
-FROM eclipse-temurin:17-jre-alpine
-RUN adduser -D -g 5005 -u 5005 yte
-ADD pinpoint-agent pinpoint-agent
-RUN chown -R yte /pinpoint-agent
+FROM eclipse-temurin:17-jre
+RUN groupadd yte && useradd -g yte yte
 
 COPY --from=builder dependencies/ ./
 COPY --from=builder spring-boot-loader/ ./
